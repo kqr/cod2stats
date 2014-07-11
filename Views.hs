@@ -28,5 +28,11 @@ playerListView players =
   text . T.unlines . flip map players $ \p -> format "{} ({} kills, {} deaths)" (name p, killCount p, deathCount p)
 
 
+roundView :: Round -> ActionM ()
+roundView round = do
+  let scoreboard = flip map (players round) $ \p -> format "{} (Efficacy {}, {} played)" (name p, efficacy p, playtime p)
+  text . T.unlines $ [ format "Round played on {}" (Only (mapName round))
+                     , "Players: "
+                     ] ++ scoreboard 
 
 

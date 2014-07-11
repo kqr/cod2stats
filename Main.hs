@@ -19,21 +19,27 @@ main = do
   postgres <- connectPostgreSQL "host='localhost' dbname='cod2stats' user='cod2stats' password='cod2stats'"
 
   scotty 3000 $ do
+
     get "/" $ do
       text "Hello, world!"
+
+    get "/round/:id" $ do
+      round_id <- param "id"
+      round    <- runPGTransaction (getRound postgres round_id)
+      either text roundView round
 
     get "/players" $ do
       players <- liftIO $ getTopPlayers postgres
       playerListView players
 
     get "/player/id/:id" $ do
-      playerID <- param "id"
-      player   <- runPQTransaction (getPlayer postgres playerID)
+      player_id <- param "id"
+      player    <- runPGTransaction (getPlayer postgres player_id)
       either text playerView player
       
     get "/player/:name" $ do
       playerName <- param "name"
-      player     <- runPQTransaction (getPlayerByName postgres playerName)
+      player     <- runPGTransaction (getPlayerByName postgres playerName)
       either text playerView player
 
     notFound $ do
@@ -42,7 +48,7 @@ main = do
 
 
   where
-    runPQTransaction = liftIO . runExceptT
+    runPGTransaction = liftIO . runExceptT
 
 
 
