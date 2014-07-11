@@ -23,6 +23,10 @@ main = do
     get "/" $ do
       text "Hello, world!"
 
+    get "/rounds" $ do
+      rounds <- liftIO $ getLatestRounds postgres
+      roundListView rounds
+
     get "/round/:id" $ do
       round_id <- param "id"
       round    <- runPGTransaction (getRound postgres round_id)
