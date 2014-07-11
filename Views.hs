@@ -15,11 +15,9 @@ import Models
 playerView :: Player -> ActionM ()
 playerView player =
   text $ T.unlines [ format "Player {}" (Only (name player))
-                   , "Win–Loss: TBI"
                    , format "Kills: {}" (Only (killCount player))
                    , format "Deaths: {}" (Only (deathCount player))
                    , format "KDR: {}" (Only (fixed 2 (kdr player)))
-                   , format "Headshots: {}" (Only (hsCount player))
                    , format "Time played: {}" (Only (playtime player))
                    ]
 
@@ -29,10 +27,14 @@ playerListView players =
 
 
 roundView :: Round -> ActionM ()
-roundView round = do
-  let scoreboard = flip map (players round) $ \p -> format "{} (Efficacy {}, {} played)" (name p, efficacy p, playtime p)
+roundView round =
   text . T.unlines $ [ format "Round played on {}" (Only (mapName round))
+                     , ""
                      , "Players: "
                      ] ++ scoreboard 
+  where
+    scoreboard = map playerscore (players round) 
+    playerscore p = format "{}\t\t(Efficacy {}\t{} kills\t{} deaths\t{} K/D\t{} played)"
+                       (name p, efficacy p, killCount p, deathCount p, kdr p, playtime p)
 
 
