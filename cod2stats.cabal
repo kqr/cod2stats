@@ -25,3 +25,4 @@ executable cod2stats
                      , text
                      , text-format
                      , time
+                     , blaze-html
