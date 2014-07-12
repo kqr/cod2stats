@@ -6,7 +6,6 @@ import           Database.PostgreSQL.Simple
 import           Data.Text.Lazy                         (Text)
 import           Data.Text.Format                       (format)
 import qualified Data.Text.Format           as F
-import           Data.Time                              (DiffTime)
 
 import           Control.Applicative                    (liftA2)
 import           Data.Monoid                            (mconcat, (<>))
@@ -21,13 +20,17 @@ import           Control.Monad.Trans.Except      hiding (except)
 --  ==         Types            ==
 --  ==============================
 
+newtype Playtime = Playtime { fromPlaytime :: Integer }
+toPlaytime :: Double -> Playtime
+toPlaytime = Playtime . floor
+
 data Player = Player { player_id  :: Int
                      , name       :: Text
                      , efficacy   :: Double
                      , killCount  :: Integer
                      , deathCount :: Integer
                      , kdr        :: Double
-                     , playtime   :: DiffTime
+                     , playtime   :: Playtime
                      }
 
 
@@ -91,7 +94,7 @@ getEfficacy pg player_id = do
 
 getPlayer :: Connection -> Int -> PGTransaction Player
 getPlayer pg player_id = do
-  row <- liftIO $ query pg "SELECT name, playtime, kills, deaths FROM players WHERE id=?" (Only player_id)
+  row <- liftIO $ query pg "SELECT name, EXTRACT('epoch' FROM playtime), kills, deaths FROM players WHERE id=?" (Only player_id)
 
   (player_name, playtime, kills, deaths) <-
           except $ single row
@@ -100,7 +103,7 @@ getPlayer pg player_id = do
 
   eff <- liftIO $ getEfficacy pg player_id
 
-  return $ Player player_id player_name eff kills deaths (fromInteger kills/fromInteger deaths) playtime
+  return $ Player player_id player_name eff kills deaths (fromInteger kills/fromInteger deaths) (toPlaytime playtime)
 
 
 getPlayerByName :: Connection -> Text -> PGTransaction Player
@@ -148,7 +151,7 @@ getRound pg round_id = do
 
   playerInfo   <- liftIO . flip (query pg) (Only round_id) $ mconcat
                     [ "SELECT "
-                    , "  players.id, players.name, roundplayers.playtime, "
+                    , "  players.id, players.name, EXTRACT('epoch' FROM roundplayers.playtime), "
                     , "  roundplayers.kills, roundplayers.deaths, "
                     ,    efficacyQuery
                     , "FROM "
@@ -162,7 +165,7 @@ getRound pg round_id = do
                     ]
 
   let players  = flip map playerInfo $ \(player_id, name, playtime, kills, deaths, efficacy) ->
-                   Player player_id name efficacy kills deaths (fromInteger kills / fromInteger deaths) playtime 
+                   Player player_id name efficacy kills deaths (fromInteger kills / fromInteger deaths) (toPlaytime playtime)
 
   return $ Round round_id mapName players
 

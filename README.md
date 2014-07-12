@@ -1,14 +1,6 @@
 cod2stats
 =========
 
-Dependencies
-------------
-
-DEPENDS ON A PATCHED POSTGRESQL-SIMPLE THAT HANDLES INTERVAL TYPES!!
-
-    git clone git@github.com:kqr/postgresql-simple.git
-
-
 Executing
 ---------
 

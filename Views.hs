@@ -14,7 +14,6 @@ import           Data.Text.Format.Params            (Params)
 
 import           Control.Monad                      (forM_)
 import           Data.Monoid                        ((<>))
-import           Data.Time                          (DiffTime)
 
 import Models
 
@@ -34,13 +33,13 @@ instance Displayable Text     where display = toHtml
 instance Displayable Integer  where display = formatHtml "{}" . Only
 instance Displayable Int      where display = formatHtml "{}" . Only
 instance Displayable Double   where display = formatHtml "{}" . Only . fixed 2
-instance Displayable DiffTime where
-  display dt | h > 0     = formatHtml "{} hours" (Only (fixed 1 hf))
+instance Displayable Playtime where
+  display pt | h > 0     = formatHtml "{} hours" (Only (fixed 1 hf))
              | otherwise = formatHtml "{}:{}" (m, left 2 '0' s)
-    where s = floor dt               `mod` 60 :: Int
-          m = (floor dt `quot` 60)   `mod` 60 :: Int
-          h = (floor dt `quot` 3600)          :: Int
-          hf = fromRational (toRational dt) / 3600 :: Double
+    where s = fromPlaytime pt `mod` 60
+          m = (fromPlaytime pt `quot` 60) `mod` 60
+          h = (fromPlaytime pt `quot` 3600)
+          hf = fromInteger (fromPlaytime pt) / 3600 :: Double
 
 
 
