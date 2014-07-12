@@ -20,6 +20,7 @@ executable cod2stats
   build-depends:       base ==4.6.*
                      , blaze-html
                      , bytestring
+                     , heroku
                      , http-types
                      , postgresql-simple
                      , scotty

@@ -8,24 +8,26 @@ import qualified Network.HTTP.Types            as HTTP (status404)
 import           Control.Monad.IO.Class                (liftIO)
 import           Control.Monad.Trans.Except            (runExceptT)
 
-import           Data.Text.Lazy                        (Text, unpack)
-import           Data.Text.Format
-import qualified Data.ByteString.Char8         as BS   (pack)
+import           Data.Monoid                           ((<>))
+import           Data.Text.Lazy                        (Text)
+import           Data.Text.Encoding               (encodeUtf8)
 import           Text.Blaze.Html.Renderer.Text         (renderHtml)
 
-import           System.Environment                    (getArgs)
+import           System.Environment                    (getEnv)
+import           Web.Heroku                            (dbConnParams)
 
 import           Models
 import           Views
 
 
 main = do
-  [host, port, dbname, user, password] <- getArgs
-  postgres <- connectPostgreSQL (BS.pack (unpack (format
-          "host='{}' port={} dbname='{}' user='{}' password='{}' sslmode=require"
-          (host, port, dbname, user, password))))
+  port <- fmap read (getEnv "PORT")
 
-  scotty 3000 $ do
+  params <- dbConnParams
+  let connStr = foldr (\(k, v) t -> t <> (encodeUtf8 $ k <> "=" <> v <> " ")) "" params
+  postgres <- connectPostgreSQL connStr
+
+  scotty port $ do
 
     get "/" $ do
       players <- liftIO $ getTopPlayers postgres
