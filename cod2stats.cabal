@@ -23,7 +23,7 @@ executable cod2stats
                      , heroku
                      , http-types
                      , postgresql-simple
-                     , scotty
+                     , scotty == 0.7.*
                      , text
                      , text-format
                      , transformers
