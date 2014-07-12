@@ -1,9 +1,24 @@
 cod2stats
 =========
 
-To build:
+Dependencies
+------------
+
+DEPENDS ON A PATCHED POSTGRESQL-SIMPLE THAT HANDLES INTERVAL TYPES!!
+
+    git clone git@github.com:kqr/postgresql-simple.git
+
+
+Executing
+---------
+
+To initialise environment:
 
     cabal sandbox init
+    cabal sandbox add-source ../path/to/patched/postgresql-simple
+    
+To build:
+
     cabal install --only-dependencies
     cabal build
 
