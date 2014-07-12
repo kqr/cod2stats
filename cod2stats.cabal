@@ -17,7 +17,7 @@ cabal-version:       >=1.8
 executable cod2stats
   main-is:             Main.hs
   -- other-modules:       
-  build-depends:       base ==4.6.*
+  build-depends:       base >=4.5.0
                      , blaze-html
                      , bytestring
                      , heroku
