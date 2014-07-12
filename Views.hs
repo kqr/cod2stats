@@ -112,6 +112,7 @@ site contents =
     head $ do
       title "cod2stats"
       link ! rel "stylesheet" ! href "/css"
+      meta ! httpEquiv "Content-Type" ! content "text/html; charset=utf-8"
     body $ do
       header $ do
         h1 $ a ! href "/" $ "cod2stats"
