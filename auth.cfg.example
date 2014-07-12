@@ -1,0 +1,5 @@
+localhost   -- ip
+5432        -- port
+cod2stats   -- dbname
+cod2stats   -- user
+cod2stats   -- password

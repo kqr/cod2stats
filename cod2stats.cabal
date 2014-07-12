@@ -18,11 +18,11 @@ executable cod2stats
   main-is:             Main.hs
   -- other-modules:       
   build-depends:       base ==4.6.*
-                     , scotty
+                     , blaze-html
+                     , bytestring
                      , http-types
-                     , transformers
                      , postgresql-simple
+                     , scotty
                      , text
                      , text-format
-                     , time
-                     , blaze-html
+                     , transformers

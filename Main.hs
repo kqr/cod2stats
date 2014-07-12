@@ -8,7 +8,9 @@ import qualified Network.HTTP.Types            as HTTP (status404)
 import           Control.Monad.IO.Class                (liftIO)
 import           Control.Monad.Trans.Except            (runExceptT)
 
-import           Data.Text.Lazy                        (Text)
+import           Data.Text.Lazy                        (Text, unpack)
+import           Data.Text.Format
+import qualified Data.ByteString.Char8         as BS   (pack)
 import           Text.Blaze.Html.Renderer.Text         (renderHtml)
 
 import           Models
@@ -16,7 +18,11 @@ import           Views
 
 
 main = do
-  postgres <- connectPostgreSQL "host='localhost' dbname='cod2stats' user='cod2stats' password='cod2stats'"
+  cfg <- fmap (map (takeWhile (/= ' ')) . lines) (readFile "auth.cfg")
+  let [host, port, dbname, user, password] = cfg
+  postgres <- connectPostgreSQL (BS.pack (unpack (format
+          "host='{}' port={} dbname='{}' user='{}' password='{}'"
+          (host, port, dbname, user, password))))
 
   scotty 3000 $ do
 
