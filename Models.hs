@@ -31,8 +31,13 @@ data Player = Player { player_id  :: Int
                      , deathCount :: Integer
                      , kdr        :: Double
                      , playtime   :: Playtime
+                     , details    :: Maybe Details
                      }
 
+data Details = Details { hsCount    :: Integer
+                       , favWeapon  :: Text
+                       , meleeKills :: Integer
+                       }
 
 data Round  = Round  { round_id   :: Int
                      , mapName    :: Text
@@ -89,21 +94,50 @@ getEfficacy pg player_id = do
   row <- flip (query pg) (Only player_id) $
            "SELECT AVG(efficacy) FROM (SELECT " <> efficacyQuery <>
            "FROM roundplayers WHERE player_id=? ORDER BY round_id DESC LIMIT 10) a"
+  -- Return the result, but default to zero if it doesn't exist
   return . head . (++[0]) . map fromOnly $ row
+
+
+singleRowFromPlayerId :: FromRow r => Connection -> Int -> Query -> PGTransaction r
+singleRowFromPlayerId pg player_id qry = do
+  row <- liftIO $ query pg qry (Only player_id)
+  except $ single row
+    (format "No player with id {} exists!" (F.Only player_id))
+    (format "Too many hits on player id {}. Check database integrity!" (F.Only player_id))
+
+
+getDetails :: Connection -> Int -> PGTransaction Details
+getDetails pg player_id = do
+  Only hscount <- singleRowFromPlayerId pg player_id
+                      "SELECT COUNT(*) FROM deaths WHERE killer_id=? AND headshot='t'"
+  Only meleecount <- singleRowFromPlayerId pg player_id
+                         "SELECT COUNT(*) FROM deaths WHERE killer_id=? AND killfeed='MOD_MELEE'"
+  Only commonWeapon <- singleRowFromPlayerId pg player_id $
+                           mconcat [ "SELECT weapon "
+                                   , "FROM ("
+                                   ,   "SELECT weapon, COUNT(*) "
+                                   ,   "FROM deaths, (SELECT id as round FROM rounds ORDER BY id DESC LIMIT 2) a "
+                                   ,   "WHERE round_id=round AND killer_id=?"
+                                   ,   "GROUP BY weapon"
+                                   , ") b "
+                                   , "ORDER BY count DESC "
+                                   , "LIMIT 1"
+                                   ]
+
+  return $ Details hscount commonWeapon meleecount
+
 
 
 getPlayer :: Connection -> Int -> PGTransaction Player
 getPlayer pg player_id = do
-  row <- liftIO $ query pg "SELECT name, EXTRACT('epoch' FROM playtime), kills, deaths FROM players WHERE id=?" (Only player_id)
-
   (player_name, playtime, kills, deaths) <-
-          except $ single row
-            (format "No player with id {} exists!" (F.Only player_id))
-            (format "Too many hits on player id {}. Check database integrity!" (F.Only player_id))
-
+      singleRowFromPlayerId pg player_id "SELECT name, EXTRACT('epoch' FROM playtime), kills, deaths FROM players WHERE id=?"
   eff <- liftIO $ getEfficacy pg player_id
+  detail <- getDetails pg player_id
 
-  return $ Player player_id player_name eff kills deaths (fromInteger kills/fromInteger deaths) (toPlaytime playtime)
+  return $ Player player_id player_name eff kills deaths
+                  (fromInteger kills/fromInteger deaths)
+                  (toPlaytime playtime) (Just detail)
 
 
 getPlayerByName :: Connection -> Text -> PGTransaction Player
@@ -165,7 +199,9 @@ getRound pg round_id = do
                     ]
 
   let players  = flip map playerInfo $ \(player_id, name, playtime, kills, deaths, efficacy) ->
-                   Player player_id name efficacy kills deaths (fromInteger kills / fromInteger deaths) (toPlaytime playtime)
+                   Player player_id name efficacy kills deaths
+                          (fromInteger kills / fromInteger deaths)
+                          (toPlaytime playtime) Nothing
 
   return $ Round round_id mapName players
 

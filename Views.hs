@@ -4,7 +4,7 @@ module Views where
 
 import           Prelude                     hiding (head, div, id)
 
-import           Text.Blaze.Html5            hiding (map)
+import           Text.Blaze.Html5            hiding (map, details)
 import           Text.Blaze.Html5.Attributes hiding (name, title)
 import           Data.String                        (fromString)
 import           Data.Text.Lazy                     (Text)
@@ -42,7 +42,9 @@ instance Displayable Playtime where
           hf = fromInteger (fromPlaytime pt) / 3600 :: Double
 
 
-
+maybeDisplay :: Displayable a => Maybe a -> Html
+maybeDisplay (Just x) = display x
+maybeDisplay Nothing  = display ("--" :: Text)
 
 
 scoreboard :: [Player] -> Html
@@ -64,11 +66,14 @@ playerView :: Player -> Html
 playerView player = do
   h2 $ formatHtml "Player {}" (Only (name player))
   table $ do
-    tr $ th "Efficacy: "    >> td (display (efficacy player))
-    tr $ th "Kills: "       >> td (display (killCount player))
-    tr $ th "Deaths: "      >> td (display (deathCount player))
-    tr $ th "KDR: "         >> td (display (kdr player))
-    tr $ th "Time played: " >> td (display (playtime player))
+    tr $ th "Efficacy: "           >> td (display (efficacy player))
+    tr $ th "Kills: "              >> td (display (killCount player))
+    tr $ th "Headshots: "          >> td (maybeDisplay (fmap hsCount (details player)))
+    tr $ th "Melee kills: "        >> td (maybeDisplay (fmap meleeKills (details player)))
+    tr $ th "Deaths: "             >> td (display (deathCount player))
+    tr $ th "KDR: "                >> td (display (kdr player))
+    tr $ th "Time played: "        >> td (display (playtime player))
+    tr $ th "Favourite weapon: "   >> td (maybeDisplay (fmap favWeapon (details player)))
 
 playerListView :: [Player] -> Html
 playerListView players = do
@@ -79,14 +84,12 @@ playerListView players = do
 
 roundView :: Round -> Html
 roundView round = do
-  div ! class_ "table" $ do
     h2 $ formatHtml "Round {} on {} ({} players)" (round_id round, mapName round, length (players round))
     table $ scoreboard (players round)
 
 
 roundListView :: [Round] -> Html
 roundListView rounds = do
-  div ! class_ "table" $ do
     h2 "Last 10 rounds played"
     table $ do
       tr $ mapM_ th ["Round #", "Map", "Players"]
