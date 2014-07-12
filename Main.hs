@@ -13,15 +13,16 @@ import           Data.Text.Format
 import qualified Data.ByteString.Char8         as BS   (pack)
 import           Text.Blaze.Html.Renderer.Text         (renderHtml)
 
+import           System.Environment                    (getArgs)
+
 import           Models
 import           Views
 
 
 main = do
-  cfg <- fmap (map (takeWhile (/= ' ')) . lines) (readFile "auth.cfg")
-  let [host, port, dbname, user, password] = cfg
+  [host, port, dbname, user, password] <- getArgs
   postgres <- connectPostgreSQL (BS.pack (unpack (format
-          "host='{}' port={} dbname='{}' user='{}' password='{}'"
+          "host='{}' port={} dbname='{}' user='{}' password='{}' sslmode=require"
           (host, port, dbname, user, password))))
 
   scotty 3000 $ do
