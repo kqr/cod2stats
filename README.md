@@ -7,7 +7,6 @@ Executing
 To initialise environment:
 
     cabal sandbox init
-    cabal sandbox add-source ../path/to/patched/postgresql-simple
     
 To build:
 
@@ -16,6 +15,8 @@ To build:
 
 To run:
 
-    ./dist/build/cod2stats/cod2stats
+    export PORT=3000
+    export DATABASE_URL="postgres://user:password@host:port/databasename"
+    foreman run
 
 
